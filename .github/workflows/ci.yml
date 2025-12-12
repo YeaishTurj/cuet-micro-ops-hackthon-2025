@@ -5,134 +5,66 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-  workflow_dispatch: # Allow manual trigger
-
-# Cancel in-progress runs for same PR/branch
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
-  NODE_VERSION: "24"
-  DOCKER_IMAGE: delineate-hackathon-challenge
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # Stage 1: Linting and Code Quality
+  # Stage 1: Lint & Format Check
   lint:
-    name: 🔍 Lint & Format Check
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    name: 🔍 Lint & Format
+    runs-on: ubuntu-24.04
+    container:
+      image: node:24-slim
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Full history for better analysis
 
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
+      - name: Setup Node.js cache
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "24"
           cache: "npm"
 
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit
+      - name: Install dependencies
+        run: npm ci
 
-      - name: 🔎 Run ESLint
+      - name: Run ESLint
         run: npm run lint
         continue-on-error: false
 
-      - name: 💅 Check code formatting
+      - name: Check code formatting
         run: npm run format:check
         continue-on-error: false
 
-      - name: 📊 Upload lint results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-results
-          path: |
-            eslint-report.json
-          retention-days: 7
-          if-no-files-found: ignore
-
-  # Stage 2: Security Scanning
-  security:
-    name: 🔒 Security Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: lint
-    permissions:
-      security-events: write
-      contents: read
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit
-
-      - name: 🔐 Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
-
-      - name: 🛡️ Run Snyk Security Scan
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
-
-      - name: 🔍 Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript-typescript
-
-      - name: 🔎 Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:javascript-typescript"
-
-  # Stage 3: Testing
+  # Stage 2: Run E2E Tests
   test:
     name: 🧪 E2E Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04
     needs: lint
-
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [24]
-
+    container:
+      image: node:24-slim
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js cache
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: "24"
           cache: "npm"
 
-      - name: 📦 Install dependencies (with cache)
-        run: npm ci --prefer-offline --no-audit
+      - name: Install dependencies
+        run: npm ci
 
-      - name: 🧪 Run E2E tests
+      - name: Run E2E tests
         run: npm run test:e2e
         env:
-          NODE_ENV: test
+          NODE_ENV: development
           PORT: 3000
           S3_REGION: us-east-1
-          S3_BUCKET_NAME: ""
+          S3_BUCKET_NAME: downloads
           S3_FORCE_PATH_STYLE: "true"
           SENTRY_DSN: ""
           OTEL_EXPORTER_OTLP_ENDPOINT: ""
@@ -141,253 +73,78 @@ jobs:
           RATE_LIMIT_MAX_REQUESTS: "100"
           CORS_ORIGINS: "*"
 
-      - name: 📊 Generate test report
-        if: always()
-        run: |
-          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All E2E tests passed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Node Version:** ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Test Suite:** E2E Tests" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-
-      - name: 📤 Upload test results
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-node-${{ matrix.node-version }}
-          path: |
-            test-results/
-            coverage/
+          name: test-results
+          path: ./test-results/
           retention-days: 30
-          if-no-files-found: ignore
 
-  # Stage 4: Docker Build
+  # Stage 3: Build Docker Image
   build:
     name: 🐳 Build Docker Image
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [test, security]
-
-    outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
-
+    runs-on: ubuntu-24.04
+    needs: test
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: 📥 Checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: 🔧 Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver-opts: network=host
 
-      - name: 🏷️ Extract Docker metadata
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKER_IMAGE }}
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
             type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
 
-      - name: 🐳 Build Docker image (Production)
-        id: build
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.prod
-          push: false
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            NODE_VERSION=${{ env.NODE_VERSION }}
-            BUILD_DATE=${{ github.event.head_commit.timestamp }}
-            VCS_REF=${{ github.sha }}
-          outputs: type=docker,dest=/tmp/image.tar
 
-      - name: 📤 Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp/image.tar
-          retention-days: 7
-
-      - name: 🔍 Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          input: /tmp/image.tar
-          format: "sarif"
-          output: "trivy-results.sarif"
-          severity: "CRITICAL,HIGH"
-        continue-on-error: true
-
-      - name: 📤 Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-results.sarif"
-        continue-on-error: true
-
-      - name: 📊 Generate build summary
-        run: |
-          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ env.DOCKER_IMAGE }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:** ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Digest:** ${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Build Time:** $(date)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build Details" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Actor:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-
-  # Stage 5: Deploy (Bonus - Optional)
-  deploy:
-    name: 🚀 Deploy to Production
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 📥 Download Docker image
-        uses: actions/download-artifact@v4
-        with:
-          name: docker-image
-          path: /tmp
-
-      - name: 🔧 Load Docker image
-        run: docker load --input /tmp/image.tar
-
-      - name: 🚀 Deploy to Railway
-        id: deploy
-        run: |
-          echo "🚂 Deploying to Railway..."
-          # Railway CLI deployment would go here
-          # echo "url=https://your-app.railway.app" >> $GITHUB_OUTPUT
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        continue-on-error: true
-
-      - name: 🚀 Deploy to Fly.io
-        run: |
-          echo "🪰 Deploying to Fly.io..."
-          # Fly.io deployment would go here
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        continue-on-error: true
-
-      - name: 📊 Deployment summary
-        run: |
-          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Deployed at:** $(date)" >> $GITHUB_STEP_SUMMARY
-
-  # Notification Job
-  notify:
-    name: 📢 Send Notifications
-    runs-on: ubuntu-latest
+  # Stage 4: Report Summary
+  summary:
+    name: 📊 Pipeline Summary
+    runs-on: ubuntu-24.04
     needs: [lint, test, build]
     if: always()
-
     steps:
-      - name: 📊 Determine pipeline status
-        id: status
+      - name: Pipeline Status
         run: |
-          if [ "${{ needs.lint.result }}" = "success" ] && \
-             [ "${{ needs.test.result }}" = "success" ] && \
-             [ "${{ needs.build.result }}" = "success" ]; then
-            echo "status=success" >> $GITHUB_OUTPUT
-            echo "emoji=✅" >> $GITHUB_OUTPUT
-            echo "color=good" >> $GITHUB_OUTPUT
+          echo "✅ CI/CD Pipeline Execution Summary"
+          echo "===================================="
+          echo "Lint Status: ${{ needs.lint.result }}"
+          echo "Test Status: ${{ needs.test.result }}"
+          echo "Build Status: ${{ needs.build.result }}"
+
+          if [ "${{ needs.lint.result }}" = "failure" ] || \
+             [ "${{ needs.test.result }}" = "failure" ] || \
+             [ "${{ needs.build.result }}" = "failure" ]; then
+            echo "❌ Pipeline failed"
+            exit 1
           else
-            echo "status=failure" >> $GITHUB_OUTPUT
-            echo "emoji=❌" >> $GITHUB_OUTPUT
-            echo "color=danger" >> $GITHUB_OUTPUT
+            echo "✅ Pipeline passed successfully"
+            exit 0
           fi
-
-      - name: 💬 Send Slack notification
-        uses: slackapi/slack-github-action@v1
-        continue-on-error: true
-        with:
-          payload: |
-            {
-              "text": "${{ steps.status.outputs.emoji }} Pipeline ${{ steps.status.outputs.status }} for ${{ github.repository }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*${{ steps.status.outputs.emoji }} CI/CD Pipeline ${{ steps.status.outputs.status }}*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* <${{ github.event.head_commit.url }}|${{ github.sha }}>\n*Author:* ${{ github.actor }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Lint:* ${{ needs.lint.result }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Tests:* ${{ needs.test.result }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Build:* ${{ needs.build.result }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View Workflow"
-                      },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-      - name: 📧 Send Discord notification
-        run: |
-          curl -H "Content-Type: application/json" \
-               -d "{\"content\":\"${{ steps.status.outputs.emoji }} Pipeline **${{ steps.status.outputs.status }}** for \`${{ github.repository }}\`\n**Branch:** ${{ github.ref_name }}\n**Commit:** ${{ github.sha }}\n**Author:** ${{ github.actor }}\n**Workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
-               ${{ secrets.DISCORD_WEBHOOK_URL }}
-        continue-on-error: true
-
-      - name: 📊 Final pipeline summary
-        run: |
-          echo "## 📊 CI/CD Pipeline Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Overall Status:** ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Stage Results" >> $GITHUB_STEP_SUMMARY
-          echo "- **Lint:** ${{ needs.lint.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tests:** ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build:** ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Run ID:** ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

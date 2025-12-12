@@ -8,9 +8,8 @@ RUN npm install
 
 COPY . .
 
-# Create empty .env file for Docker (env vars come from compose)
-RUN touch .env
-
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"]
+# Use npm run dev which runs: DOWNLOAD_DELAY_MIN_MS=5000 DOWNLOAD_DELAY_MAX_MS=15000 node --experimental-transform-types --watch src/index.ts
+# Note: --env-file removed because Docker Compose provides environment variables
+CMD ["node", "--experimental-transform-types", "--watch", "src/index.ts"]

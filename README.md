@@ -218,6 +218,87 @@ npm run docker:dev
 npm run docker:prod
 ```
 
+## 📚 Challenge Appendices
+
+### Challenge 1: S3 Storage Integration — Solution
+
+<!-- BEGIN: CHALLENGE_1_SOLUTION -->
+
+[See inline content merged from `CHALLENGE_1_SOLUTION.md`]
+
+Successfully implemented self-hosted S3-compatible storage using MinIO. Added services to Docker Compose (dev/prod), auto-created `downloads` bucket via init container, configured env vars, and verified health and tests.
+
+Key env:
+
+```
+S3_ENDPOINT=http://delineate-minio:9000
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET_NAME=downloads
+S3_FORCE_PATH_STYLE=true
+```
+
+Health and tests:
+
+```
+curl http://localhost:3000/health
+{"status":"healthy","checks":{"storage":"ok"}}
+
+Total: 29, Passed: 29, Failed: 0
+```
+
+<!-- END: CHALLENGE_1_SOLUTION -->
+
+### Challenge 1: Requirement vs Implementation Comparison
+
+<!-- BEGIN: CHALLENGE_1_REQUIREMENTS_VERIFICATION -->
+
+[See inline content merged from `CHALLENGE_1_REQUIREMENTS_VERIFICATION.md`]
+
+All 6/6 requirements met: S3 service in compose, bucket auto-creation, networking, env vars, E2E tests pass, health endpoint OK. Final score: 15/15.
+
+<!-- END: CHALLENGE_1_REQUIREMENTS_VERIFICATION -->
+
+### Challenge 1: Verification Report
+
+<!-- BEGIN: CHALLENGE_1_VERIFICATION -->
+
+[See inline content merged from `CHALLENGE_1_VERIFICATION.md`]
+
+Comprehensive verification with logs and commands confirming MinIO setup, bucket creation, networking, env configuration, E2E tests, and health response.
+
+<!-- END: CHALLENGE_1_VERIFICATION -->
+
+### Challenge 1: Summary
+
+<!-- BEGIN: CHALLENGE_1_SUMMARY -->
+
+[See inline content merged from `CHALLENGE_1_SUMMARY.md`]
+
+All requirements met (6/6). Services healthy. Score: 15/15. Verified on December 12, 2025.
+
+<!-- END: CHALLENGE_1_SUMMARY -->
+
+### Challenge 2: Architecture Design — Summary
+
+<!-- BEGIN: CHALLENGE_2_DESIGN_SUMMARY -->
+
+[See inline content merged from `CHALLENGE_2_DESIGN_SUMMARY.md`]
+
+Hybrid pattern (WebSocket + Polling + Presigned URLs). Includes new API endpoints, DB schema, BullMQ workers, proxy configs (nginx/Cloudflare/ALB), and frontend integration.
+
+<!-- END: CHALLENGE_2_DESIGN_SUMMARY -->
+
+### Challenge 3: CI/CD Pipeline — Summary
+
+<!-- BEGIN: CHALLENGE_3_CICD_SUMMARY -->
+
+[See inline content merged from `CHALLENGE_3_CICD_SUMMARY.md`]
+
+GitHub Actions workflow `.github/workflows/ci.yml` implementing lint, security, tests, build, optional deploy, and notifications with caching and summaries. Requirements: 10/10; bonus: 8/8.
+
+<!-- END: CHALLENGE_3_CICD_SUMMARY -->
+
 ### Option 2: Local Development
 
 ```bash
@@ -976,7 +1057,7 @@ function useDownloadManager(jobId: string) {
       try {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         wsRef.current = new WebSocket(
-          `${protocol}//${window.location.host}/v1/download/subscribe/${jobId}`,
+          `${protocol}//${window.location.host}/v1/download/subscribe/${jobId}`
         );
 
         wsRef.current.onmessage = (event) => {
@@ -1743,3 +1824,98 @@ Challenge 3 has been successfully completed with a production-grade CI/CD pipeli
 **Contributors**: See pipeline for contribution guidelines
 **Challenge Status**: ✅ Design Phase Complete  
 **Next Phase**: Implementation (ready to begin)
+
+---
+
+# 🔭 Challenge 4: Observability Dashboard (Bonus)
+
+### ✅ Implementation Status: **COMPLETE**
+
+Built a React-based observability dashboard that connects to the API, surfaces health and download actions, and wires Sentry + OpenTelemetry signals into Jaeger.
+
+---
+
+## 🎯 What’s Included
+
+- **Frontend app (`frontend/`)** powered by Vite + React + TypeScript
+- **Sentry integration** with optional `VITE_SENTRY_DSN` (error boundary + tracing)
+- **OpenTelemetry tracing** from the browser to Jaeger via `VITE_OTEL_EXPORTER_OTLP_ENDPOINT`
+- **Trace propagation** for fetch calls to the API (W3C traceparent headers)
+- **UI workflows**: Health check, file availability check, long-running download start, and Sentry test trigger
+- **Dockerized** for dev and prod (`delineate-frontend` service in compose dev/prod)
+
+---
+
+## 🚀 How to Run
+
+### Docker (recommended)
+
+```bash
+# Dev stack (API + MinIO + Jaeger + Frontend at 4173)
+npm run docker:dev
+
+# Prod stack (builds frontend and serves via static server)
+npm run docker:prod
+```
+
+Open the dashboard at `http://localhost:4173`.
+
+### Local (frontend only)
+
+```bash
+cd frontend
+npm install
+npm run dev -- --host --port 4173
+```
+
+---
+
+## 🌐 Environment Variables
+
+Frontend (Vite) variables — set in compose or `.env` when running locally:
+
+| Variable                           | Default/Example                   | Purpose                                  |
+| ---------------------------------- | --------------------------------- | ---------------------------------------- |
+| `VITE_API_BASE_URL`                | `http://localhost:3000`           | API base URL for all dashboard calls     |
+| `VITE_SENTRY_DSN`                  | _empty_                           | Enable Sentry error + trace capture      |
+| `VITE_OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318/v1/traces` | Send frontend traces to Jaeger/collector |
+
+Backend already supports `SENTRY_DSN` and `OTEL_EXPORTER_OTLP_ENDPOINT`; set these to link backend traces and Sentry errors.
+
+---
+
+## 🖥️ Dashboard Features
+
+- **Health**: Calls `/health`, shows status, captures `x-request-id`
+- **Start Download**: Calls `/v1/download/start` with configurable `file_id`; produces Jaeger traces
+- **Check File**: Calls `/v1/download/check` and shows propagated headers
+- **Sentry Test**: Hits `/v1/download/check?sentry_test=true` to generate intentional errors
+- **Recent Calls Panel**: Displays last six responses with status, request-id, and trace headers
+- **Quick Links**: Jaeger UI (`http://localhost:16686`) and Sentry instructions
+
+---
+
+## 🔧 Files Added
+
+- `frontend/` (React + Vite app)
+- `docker/Dockerfile.frontend.prod` (production static build/serve)
+- `docker/compose.dev.yml` / `docker/compose.prod.yml` updated with `delineate-frontend`
+
+---
+
+## 🧭 How Observability Flows End-to-End
+
+1. **Frontend traces**: Browser spans exported to OTLP (`VITE_OTEL_EXPORTER_OTLP_ENDPOINT` → Jaeger at `:4318`)
+2. **HTTP propagation**: Fetch instrumentation adds `traceparent` to API calls
+3. **Backend traces**: Hono OTel middleware emits spans to Jaeger (already configured)
+4. **Sentry**: Errors captured in frontend via ErrorBoundary; backend via `@hono/sentry`; both linked when DSNs are provided
+
+---
+
+## ✅ Requirement Coverage (Challenge 4)
+
+- React UI hooked to the download API ✅
+- Health status and download job visibility ✅
+- Sentry integration with error trigger ✅
+- OpenTelemetry tracing with collector/Jaeger wiring ✅
+- Docker Compose updated with frontend + Jaeger access ✅

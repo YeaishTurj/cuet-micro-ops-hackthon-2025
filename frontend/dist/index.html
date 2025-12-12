@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delineate Observability Dashboard</title>
+    <script type="module" crossorigin src="/assets/index-DLuUut5o.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-_bsO54eq.css">
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Observability Dashboard</p>
+          <h1>Delineate Downloads</h1>
+          <p class="lede">
+            Check health, kick off downloads, and see how Sentry + OpenTelemetry
+            connect to Jaeger and your API traces.
+          </p>
+          <div class="chips" id="status-chips"></div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card">
+          <div class="card-head">
+            <h2>Health</h2>
+            <span class="badge health-status">unknown</span>
+          </div>
+          <p>Ping the API /health endpoint and mirror the backend status.</p>
+          <button class="btn-health">Check health</button>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Start Download</h2>
+            <span class="badge">/v1/download/start</span>
+          </div>
+          <p>Kick off a long-running download to watch traces in Jaeger.</p>
+          <div class="field">
+            <label>file_id</label>
+            <input type="number" class="file-id-input" value="70000" />
+          </div>
+          <button class="btn-start">Start download</button>
+          <p class="hint job-message"></p>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Check File</h2>
+            <span class="badge">/v1/download/check</span>
+          </div>
+          <p>Check availability and see trace headers propagate to the API.</p>
+          <div class="field">
+            <label>file_id</label>
+            <input type="number" class="file-id-input" value="70000" />
+          </div>
+          <button class="btn-check">Check file</button>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <h2>Sentry Test</h2>
+            <span class="badge">/v1/download/check?sentry_test=true</span>
+          </div>
+          <p>
+            Triggers the intentional error route so you can verify Sentry error
+            capture end-to-end.
+          </p>
+          <button class="btn-sentry">Trigger Sentry error</button>
+          <p class="hint">
+            Check your Sentry project for the event; trace linkage appears if
+            DSN and OTel exporter are configured.
+          </p>
+        </section>
+      </main>
+
+      <section class="card wide">
+        <div class="card-head">
+          <h2>Recent Calls</h2>
+          <span class="badge">shows latest 6</span>
+        </div>
+        <div class="log"></div>
+      </section>
+
+      <section class="card wide">
+        <div class="card-head">
+          <h2>Where to look</h2>
+        </div>
+        <ul class="list">
+          <li>
+            Jaeger UI: <code>http://localhost:16686</code> (service:
+            <code>delineate-hackathon-challenge</code>)
+          </li>
+          <li>
+            Sentry: set <code>VITE_SENTRY_DSN</code> and
+            <code>SENTRY_DSN</code>, then trigger a Sentry test above.
+          </li>
+          <li>
+            Trace export: set <code>VITE_OTEL_EXPORTER_OTLP_ENDPOINT</code> to
+            your collector (defaults to Jaeger OTLP).
+          </li>
+        </ul>
+      </section>
+    </div>
+
+  </body>
+</html>

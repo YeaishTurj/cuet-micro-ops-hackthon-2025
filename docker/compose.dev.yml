@@ -19,6 +19,8 @@ services:
       - S3_SECRET_ACCESS_KEY=minioadmin
       - S3_BUCKET_NAME=downloads
       - S3_FORCE_PATH_STYLE=true
+      - DOWNLOAD_DELAY_MIN_MS=5000
+      - DOWNLOAD_DELAY_MAX_MS=15000
     depends_on:
       delineate-jaeger:
         condition: service_started
@@ -62,6 +64,25 @@ services:
       mc anonymous set public myminio/downloads;
       echo 'MinIO bucket created successfully';
       "
+
+  delineate-frontend:
+    image: node:24-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3000
+      - VITE_SENTRY_DSN=
+      - VITE_OTEL_EXPORTER_OTLP_ENDPOINT=
+    ports:
+      - "4173:4173"
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+    depends_on:
+      delineate-app:
+        condition: service_started
+      delineate-jaeger:
+        condition: service_started
 
 volumes:
   minio-data:

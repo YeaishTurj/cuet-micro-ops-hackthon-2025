@@ -384,7 +384,7 @@ downloadQueue.process(async (job) => {
           current: i + 1,
           total: fileIds.length,
           percentage: ((i + 1) / fileIds.length) * 100,
-        }),
+        })
       );
     }
 
@@ -417,7 +417,7 @@ downloadQueue.on("progress", async (job, progress) => {
         JSON.stringify({
           type: "progress",
           data: progress,
-        }),
+        })
       );
     }
   }
@@ -469,7 +469,7 @@ app.get("/v1/download/subscribe/:jobId", async (c) => {
           status: job.status,
           progress: await getJobProgress(jobId),
         },
-      }),
+      })
     );
 
     // Handle messages
@@ -511,7 +511,7 @@ app.get("/v1/download/stream/:jobId", async (c) => {
 
   // Send initial status
   yield encoder.encode(
-    `data: ${JSON.stringify({ type: "status", data: { status: job.status } })}\n\n`,
+    `data: ${JSON.stringify({ type: "status", data: { status: job.status } })}\n\n`
   );
 
   // Subscribe to Redis pub/sub
@@ -571,7 +571,7 @@ function classifyError(error: Error): ErrorType {
 // Retry logic with exponential backoff
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  policy: RetryPolicy = defaultRetryPolicy,
+  policy: RetryPolicy = defaultRetryPolicy
 ): Promise<T> {
   let lastError: Error;
 
@@ -591,12 +591,12 @@ async function retryWithBackoff<T>(
       // Calculate backoff
       const delay = Math.min(
         policy.initialDelay * Math.pow(2, attempt - 1),
-        policy.maxDelay,
+        policy.maxDelay
       );
 
       console.warn(
         `Attempt ${attempt} failed. Retrying in ${delay}ms...`,
-        error.message,
+        error.message
       );
 
       await new Promise((resolve) => setTimeout(resolve, delay));
@@ -641,8 +641,8 @@ app.use(async (c, next) => {
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(
       () => reject(new TimeoutError("Request timeout")),
-      timeoutConfig.REQUEST_TIMEOUT,
-    ),
+      timeoutConfig.REQUEST_TIMEOUT
+    )
   );
 
   try {
@@ -774,7 +774,7 @@ export default {
           {
             status: 504,
             headers: { "Content-Type": "application/json" },
-          },
+          }
         );
       }
       throw error;
@@ -913,7 +913,7 @@ export function useDownloadManager(apiUrl: string) {
         setIsLoading(false);
       }
     },
-    [apiUrl],
+    [apiUrl]
   );
 
   // WebSocket connection with fallback
@@ -973,7 +973,7 @@ export function useDownloadManager(apiUrl: string) {
         startPolling(jobId);
       }
     },
-    [job?.status],
+    [job?.status]
   );
 
   // Polling fallback
@@ -1005,7 +1005,7 @@ export function useDownloadManager(apiUrl: string) {
 
       setIsLoading(false);
     },
-    [apiUrl],
+    [apiUrl]
   );
 
   // Download file with presigned URL
@@ -1013,7 +1013,7 @@ export function useDownloadManager(apiUrl: string) {
     async (jobId: string) => {
       try {
         const response = await fetch(
-          `${apiUrl}/v1/download/job/${jobId}/download-url`,
+          `${apiUrl}/v1/download/job/${jobId}/download-url`
         );
 
         if (!response.ok) throw new Error("Failed to get download URL");
@@ -1031,7 +1031,7 @@ export function useDownloadManager(apiUrl: string) {
         setError(err.message);
       }
     },
-    [apiUrl],
+    [apiUrl]
   );
 
   // Retry failed job
@@ -1046,7 +1046,7 @@ export function useDownloadManager(apiUrl: string) {
         `${apiUrl}/v1/download/job/${job.jobId}/retry`,
         {
           method: "POST",
-        },
+        }
       );
 
       if (!response.ok) throw new Error("Failed to retry job");
@@ -1173,7 +1173,7 @@ export function DownloadComponent() {
 const validateJobId = (jobId: string): boolean => {
   // UUID v4 format
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    jobId,
+    jobId
   );
 };
 
@@ -1216,7 +1216,7 @@ app.use(
     ],
     credentials: true,
     maxAge: 3600,
-  }),
+  })
 );
 ```
 
