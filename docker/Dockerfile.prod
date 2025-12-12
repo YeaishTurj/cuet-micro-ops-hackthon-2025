@@ -18,6 +18,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
 COPY src ./src
 
+# Create empty .env file for Docker (env vars come from compose)
+RUN touch .env && chown node:node .env
+
 # Use non-root user with specific UID
 USER node
 

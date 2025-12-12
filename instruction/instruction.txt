@@ -1,0 +1,144 @@
+Dear Participants,
+
+This is an important update regarding your VM setup for the Micro-Ops Hackathon Final Round.
+
+To ensure better performance during the competition:
+
+Please do NOT use Ceph SSD for storage.
+
+Instead, use NVMe storage, as it is faster and will provide better I/O performance for your workloads.
+
+For any query contact: Yeasir Arafat (01730042595) through WhatsApp.
+
+Thank you for your cooperation and understanding.
+
+Dear Participants,
+We hope you are doing well. This is a follow-up to the VM allocation email shared earlier for the Micro-Ops Hackathon Final Round at CUET CSE FEST 2025.
+1. Confirmation of Information
+If you notice any incorrect details in the VM information you received—such as credentials or other data—please inform us immediately so we can correct it.
+2. Login Assistance
+If you are unable to log in to your VM or the BCP portal, kindly follow steps from this video link: https://youtu.be/jP72-lFMx4g?si=xzvXpukmcrdrUeRI
+3. Additional Notice – Kubernetes Not Allowed
+Please note that Kubernetes will not be permitted in this hackathon.
+All participants must operate strictly within the approved technology stack and VM environment provided.
+For any kind of support you can contact
+Yeasir Arafat
+01730042595
+We appreciate your cooperation and want to ensure that every participant has a smooth and fair experience. If you still face issues after following the instructions, feel free to reach out to us.
+
+Dear Participants,
+
+As part of your preparation for the Micro-Ops Hackathon Final Round at CUET CSE FEST 2025, we are pleased to inform you that the following VM resources have been allocated for your use:
+
+Allocated VM Resources (per participant/team):
+
+VM Quota: 1
+
+Cores: 2 vCPU
+
+RAM: 8 GB
+
+Storage: 50 GB
+
+Public IP: 1
+
+You may configure Security Groups and allow necessary ports as needed through the BCP Portal:
+🔗 https://bcp.brilliant.com.bd/
+
+Your BCP Portal credentials are given below:
+First_Name: Brilliant
+Last_Name: Cloud 021
+BCP_Email:  u2104004@student.cuet.ac.bd
+BCP_Password: Tq3!jRb8z
+
+We wish you the very best in the upcoming competition and look forward to seeing your skills in action!
+
+Dear Participants,
+
+We’d like to share a consolidated update regarding the approved technology stack for the Micro-Ops Hackathon Final Round, including guidance from our technical partner bongoDev.
+
+“We strongly encourage all teams to strictly remain within the approved tech stack. You have AI support available, and the tools we've listed are widely adopted across the industry - over 98% usage. In the age of AI-assisted development and given the time constraints, this stack is more than sufficient to build robust, production-grade solutions.”
+
+Approved Tech Stack
+
+Prometheus
+Grafana
+Kibana
+Elasticsearch
+Sentry
+MinIO (S3 Compatible Object Storage)
+Docker
+GitHub Actions / Jenkins (CI/CD)
+Important Clarification
+
+You may use additional tools to support your workflow.
+However, these tools must not be alternatives or replacements for the strictly provided stack above. The approved stack is central to the competition and must remain the foundation of your solution.
+This ensures fairness while still giving you flexibility to enhance your solutions. We’re excited to see how you leverage these technologies to build innovative and production-ready systems.
+
+Dear Participants,
+
+Following up on our earlier communication regarding the approved technology stack for the Micro‑Ops Hackathon Final Round, we would like to add an important clarification.
+
+In addition to the previously mentioned tools (Prometheus, Grafana, Kibana, Elasticsearch, Sentry, MinIO, and Docker), the CI/CD stack — GitHub Actions / Jenkins — is only officially approved for use during the competition.
+
+Thank you for your attention, and we look forward to seeing your innovative solutions in action.
+
+Dear Participants,
+
+We are pleased to share the officially approved technology stack for the Micro-Ops Hackathon Final Round at CUET CSE FEST 2025. The following tools and platforms will be available for you to use during the competition:
+
+Approved Tech Stack:
+
+Prometheus
+Grafana
+Kibana
+Elasticsearch
+Sentry
+MinIO (S3 Compatible Object Storage)
+Docker
+You are strongly encouraged to familiarize yourselves with these technologies in advance, as they will play a key role in your performance during the hackathon.
+
+To keep the challenge exciting and to truly test your real-world problem-solving abilities, the complete problem context will be revealed only on the event day. This will ensure a fair and performance-driven competition for all teams.
+
+We wish you the very best in your preparation and look forward to witnessing your skills in action.
+
+Dear Participants,
+
+We are pleased to inform you that infrastructure support for the Micro-Ops Hackathon will be provided through our cloud partner InterCloud. Each team will be allocated a dedicated Virtual Machine (VM) for deployment and testing purposes during the final round.
+
+To help you get familiar with the VM access and usage process in advance, we strongly recommend that you carefully follow the instructional video provided at the link below:
+
+Video Tutorial:
+https://www.youtube.com/watch?v=jP72-lFMx4g
+
+This video demonstrates the complete step-by-step procedure for accessing and using the VM effectively. We advise all team members to review this guideline prior to the event to ensure a smooth experience during the hackathon.
+
+Additionally, all participants are requested to bring their valid student ID card on the event day for verification purposes.
+
+Please also remember to bring your own laptop/PC for the onsite round, as no computer will be provided by the organizer.
+
+If you have any questions related to the VM setup, please feel free to contact us.
+
+Event Date: December 12, 2025
+
+On-Campus Hackathon Duration: 09:00 AM – 06:00 PM
+
+ 
+
+The evaluation will take place both during the hackathon and immediately after the event.
+
+ 
+
+• Top 10–15 teams will be announced at 7:45 PM on December 12, 2025.
+
+• Final evaluation for the top teams will be conducted the same night.
+
+• Accommodation will be arranged for the selected top teams to attend the Prize Giving Ceremony on the following day (Dec 13).
+
+• Teams not selected in the top group may depart on the scheduled bus at 8:15 PM to Chattogram city.
+
+Additional Information:
+
+For deployment, infrastructure will be provided by our official cloud partner, InterCloud, and each team will be allocated one virtual machine (VM). No external deployment services will be required/allowed.
+
+
