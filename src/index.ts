@@ -314,13 +314,14 @@ const checkS3Availability = async (
       Key: s3Key,
     });
     const response = await s3Client.send(command);
+    const size = response.ContentLength ?? null;
     console.log(
-      `[S3] Found file: bucket=${env.S3_BUCKET_NAME}, key=${s3Key}, size=${response.ContentLength}`
+      `[S3] Found file: bucket=${env.S3_BUCKET_NAME}, key=${s3Key}, size=${String(size)}`
     );
     return {
       available: true,
       s3Key,
-      size: response.ContentLength ?? null,
+      size,
     };
   } catch (err) {
     const errorMsg =
